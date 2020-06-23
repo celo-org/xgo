@@ -3,7 +3,7 @@
 #
 # Released under the MIT license.
 
-FROM ubuntu:16.04
+FROM ubuntu:20.04
 
 MAINTAINER Péter Szilágyi <peterke@gmail.com>
 
@@ -21,21 +21,23 @@ ADD fetch.sh /fetch.sh
 ENV FETCH /fetch.sh
 RUN chmod +x $FETCH
 
+ARG DEBIAN_FRONTEND=noninteractive
 
 # Make sure apt-get is up to date and dependent packages are installed
 RUN \
   apt-get update && \
   apt-get install -y automake autogen build-essential ca-certificates                    \
-    gcc-5-arm-linux-gnueabi g++-5-arm-linux-gnueabi libc6-dev-armel-cross                \
-    gcc-5-arm-linux-gnueabihf g++-5-arm-linux-gnueabihf libc6-dev-armhf-cross            \
-    gcc-5-aarch64-linux-gnu g++-5-aarch64-linux-gnu libc6-dev-arm64-cross                \
-    gcc-5-mips-linux-gnu g++-5-mips-linux-gnu libc6-dev-mips-cross                       \
-    gcc-5-mipsel-linux-gnu g++-5-mipsel-linux-gnu libc6-dev-mipsel-cross                 \
-    gcc-5-mips64-linux-gnuabi64 g++-5-mips64-linux-gnuabi64 libc6-dev-mips64-cross       \
-    gcc-5-mips64el-linux-gnuabi64 g++-5-mips64el-linux-gnuabi64 libc6-dev-mips64el-cross \
-    gcc-5-multilib g++-5-multilib gcc-mingw-w64 g++-mingw-w64 clang llvm-dev             \
+    gcc-9-arm-linux-gnueabi g++-9-arm-linux-gnueabi libc6-dev-armel-cross                \
+    gcc-9-arm-linux-gnueabihf g++-9-arm-linux-gnueabihf libc6-dev-armhf-cross            \
+    gcc-9-aarch64-linux-gnu g++-9-aarch64-linux-gnu libc6-dev-arm64-cross                \
+    gcc-9-mips-linux-gnu g++-9-mips-linux-gnu libc6-dev-mips-cross                       \
+    gcc-9-mipsel-linux-gnu g++-9-mipsel-linux-gnu libc6-dev-mipsel-cross                 \
+    gcc-9-mips64-linux-gnuabi64 g++-9-mips64-linux-gnuabi64 libc6-dev-mips64-cross       \
+    gcc-9-mips64el-linux-gnuabi64 g++-9-mips64el-linux-gnuabi64 libc6-dev-mips64el-cross \
+    gcc-9-multilib g++-9-multilib gcc-mingw-w64 g++-mingw-w64 clang llvm-dev             \
     libtool libxml2-dev uuid-dev libssl-dev swig openjdk-8-jdk pkg-config patch          \
     make xz-utils cpio wget zip unzip p7zip git mercurial bzr texinfo help2man           \
+    cmake zlib1g-dev python                                                             \
     --no-install-recommends
 
 # Fix any stock package issues
@@ -52,7 +54,7 @@ RUN \
   git clone https://github.com/tpoechtrager/osxcross.git && \
   mv `basename $OSX_SDK_PATH` /osxcross/tarballs/        && \
   \
-  sed -i -e 's|-march=native||g' /osxcross/build_clang.sh /osxcross/wrapper/build.sh && \
+  sed -i -e 's|-march=native||g' /osxcross/build_clang.sh /osxcross/wrapper/build_wrapper.sh && \
   UNATTENDED=yes OSX_VERSION_MIN=10.6 /osxcross/build.sh                             && \
   mv /osxcross/target $OSX_NDK_X86                                                   && \
   \
@@ -71,7 +73,7 @@ ENV UPDATE_IOS /update_ios.sh
 RUN chmod +x $UPDATE_IOS
 
 RUN \
-  IOS_SDK_PATH=https://sdks.website/dl/iPhoneOS9.3.sdk.tbz2     && \
+  IOS_SDK_PATH=https://github.com/Sn0wCooder/theos-sdks/raw/master/iPhoneOS9.3.sdk.tbz2     && \
   $FETCH $IOS_SDK_PATH db5ecf91617abf26d3db99e769bd655b943905e5 && \
   mv `basename $IOS_SDK_PATH` iPhoneOS9.3.sdk.tar.bz2           && \
   $UPDATE_IOS /iPhoneOS9.3.sdk.tar.bz2                          && \
@@ -132,5 +134,7 @@ RUN chmod +x $BUILD_DEPS
 ADD build.sh /build.sh
 ENV BUILD /build.sh
 RUN chmod +x $BUILD
+
+ENV LD_LIBRARY_PATH=/usr/local/osx-ndk-x86/lib
 
 ENTRYPOINT ["/build.sh"]
